@@ -1,18 +1,29 @@
 ﻿using BaseX;
 using CodeX;
 using FrooxEngine;
+using FrooxEngine.FinalIK;
 using FrooxEngine.LogiX;
+using FrooxEngine.LogiX.Actions;
+using FrooxEngine.LogiX.Avatar;
+using FrooxEngine.LogiX.Cast;
+using FrooxEngine.LogiX.Data;
 using FrooxEngine.LogiX.Display;
 using FrooxEngine.LogiX.Input;
 using FrooxEngine.LogiX.Math;
+using FrooxEngine.LogiX.Network;
 using FrooxEngine.LogiX.Operators;
 using FrooxEngine.LogiX.Physics;
+using FrooxEngine.LogiX.Playback;
 using FrooxEngine.LogiX.ProgramFlow;
+using FrooxEngine.LogiX.References;
 using FrooxEngine.LogiX.Transform;
+using FrooxEngine.LogiX.Twitch;
 using FrooxEngine.LogiX.Utility;
 using FrooxEngine.UIX;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -38,13 +49,13 @@ namespace NeosWikiAssetGenerator
             BuildTypeBlacklist();
             BuildTypeMap();
             BuildOverloadPreferences();
-            GenerateInfoBoxes();
-            GenerateWikiIndexPages();
+            //GenerateInfoBoxes();
+            //GenerateWikiIndexPages();
         }
 
         public void BuildInspectorUI(UIBuilder ui)
         {
-            WorkerInspector.BuildInspectorUI((Worker)this, ui);
+            WorkerInspector.BuildInspectorUI(this, ui);
             ui.Button("Generate named Component", (b, e) => { StartTask(async () => { await GenerateComponentVisuals(ComponentName.Value); }); });
             ui.Button("Generate Component and LogiX visuals", (b, e) => { StartTask(async () => { await GenerateComponentVisuals(); }); });
             ui.Button("Generate Wiki InfoBoxes and tables", (b, e) => { GenerateInfoBoxes(); });
@@ -128,7 +139,6 @@ namespace NeosWikiAssetGenerator
                 sb.AppendLine("{{#if:{{{Input" + ix + "Type|}}}|");
                 sb.AppendLine("{{!}}-");
                 sb.AppendLine("! style=\"background:{{{{{Input" + ix + "Type}}}-color}};\"{{!}} &nbsp;");
-                //sb.AppendLine("{{!}}'''[[:Category:Types:{{{Input" + ix + "Type}}}| {{{Input" + ix + "Type}}}}}]]'''");
                 sb.AppendLine("{{!}}'''[[:Category:Types:{{{Input" + ix + "Type}}}{{!}}{{#if:{{{Input" + ix + "TypeString|}}}|{{{Input" + ix + "TypeString}}}|{{{Input" + ix + "Type}}}}}]]'''");
                 sb.AppendLine("{{!}}{{{Input" + ix + "Name}}}");
                 sb.AppendLine("}}");
@@ -154,9 +164,9 @@ namespace NeosWikiAssetGenerator
             IEnumerable<Type> frooxEngineTypes = AppDomain.CurrentDomain.GetAssemblies().Where(T => T.GetName().Name == "FrooxEngine").SelectMany(T => T.GetTypes());
             IEnumerable<Type> frooxEngineComponentTypes = frooxEngineTypes.Where(T => T.Namespace != null && T.Namespace.StartsWith("FrooxEngine")).Where(T => T.IsSubclassOf(typeof(Component)) || T.IsSubclassOf(typeof(LogixNode)));
 
-            ComponentPathNode rootNode = new ComponentPathNode();
+            ComponentPathNode componentRoot = new ComponentPathNode() { Name = "Components" };
+            ComponentPathNode logixRoot = new ComponentPathNode() { Name = "Logix Nodes" };
             List<string> componentPaths = new List<string>(3000);
-
 
             foreach (Type componentType in frooxEngineComponentTypes)
             {
@@ -171,10 +181,15 @@ namespace NeosWikiAssetGenerator
                     //especially since they're not visible.
                     if (path.Contains("Hidden"))
                         continue;
-                    ComponentPathNode currentNode = rootNode;
+
+                    ComponentPathNode currentNode = componentRoot;
+                    if (componentType.IsSubclassOf(typeof(LogixNode)))
+                        currentNode = logixRoot;
                     int depth = 0;
-                    foreach (string pathNode in (path + "/" + componentType.Name).Split('/'))
+                    foreach (string pathNode in (path + "/" + componentType.GetNiceName()).Split('/'))
                     {
+                        if (currentNode.Children == null)
+                            currentNode.Children = new List<ComponentPathNode>();
                         ComponentPathNode _currentNode = currentNode.Children.SingleOrDefault(N => N.Name == pathNode);
                         if (_currentNode == null)
                         {
@@ -185,21 +200,53 @@ namespace NeosWikiAssetGenerator
                         currentNode = _currentNode;
                         depth++;
                     }
+                    currentNode.Inherits = GetBaseTypes(componentType).ToList();
+                    currentNode.TypeName = componentType.FullName;
+                    
                 }
             }
 
-            StringBuilder LogixSearcherBuilder = new StringBuilder();
+            StringBuilder JPSearcherStringBuilder = new StringBuilder();
             Stack<ComponentPathNode> nodeStack = new Stack<ComponentPathNode>();
-            nodeStack.Push(rootNode);
+            nodeStack.Push(componentRoot);
             while (nodeStack.Count > 0)
             {
                 ComponentPathNode currentNode = nodeStack.Pop();
-                LogixSearcherBuilder.Append(':', currentNode.Depth).Append(" ").AppendLine(currentNode.Name);
+                JPSearcherStringBuilder.Append(':', currentNode.Depth).Append(" ").AppendLine(currentNode.Name);
+                if (currentNode.Children == null)
+                    continue;
                 currentNode.Children.Sort();
                 foreach (ComponentPathNode child in currentNode.Children)
                     nodeStack.Push(child);
             }
-            System.IO.File.WriteAllText("D:\\NeosWiki\\LogixSearcherIndex.txt", LogixSearcherBuilder.ToString());
+            File.WriteAllText("D:\\NeosWiki\\Components.json",
+                JsonConvert.SerializeObject(componentRoot,
+                Formatting.Indented,
+                new JsonSerializerSettings()
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                }));
+            nodeStack = new Stack<ComponentPathNode>();
+            nodeStack.Push(logixRoot);
+            while (nodeStack.Count > 0)
+            {
+                ComponentPathNode currentNode = nodeStack.Pop();
+                JPSearcherStringBuilder.Append(':', currentNode.Depth).Append(" ").AppendLine(currentNode.Name);
+                if (currentNode.Children == null)
+                    continue;
+                currentNode.Children.Sort();
+                foreach (ComponentPathNode child in currentNode.Children)
+                    nodeStack.Push(child);
+            }
+            File.WriteAllText("D:\\NeosWiki\\Logix.json",
+                JsonConvert.SerializeObject(logixRoot,
+                Formatting.Indented,
+                new JsonSerializerSettings()
+                {
+                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+                }));
+            File.WriteAllText("D:\\NeosWiki\\JPSearcherIndex.txt", JPSearcherStringBuilder.ToString());
+
         }
 
         private async void CaptureImage()
@@ -274,7 +321,8 @@ namespace NeosWikiAssetGenerator
                     //IEnumerable<PropertyInfo> nodeOutputProperties = logixType.GetProperties(BindingFlags.Public).Where(F => F.PropertyType.GetInterfaces().Contains(typeof(IOutputElement)) || F.Name == "Content");
 
                     //Check if this component has been rendered already
-                    if (String.IsNullOrEmpty(targetComponentName) && componentCategory.Paths.All((path) => File.Exists($"{targetPath}{path}\\{componentSafeName}Node.png") || File.Exists($"{targetPath}{path}\\{componentSafeName}Component.png")))
+                    if (String.IsNullOrEmpty(targetComponentName) &&
+                        componentCategory.Paths.All((path) => File.Exists($"{targetPath}{path}\\{componentSafeName}Node.png") || File.Exists($"{targetPath}{path}\\{componentSafeName}Component.png")))
                     {
                         NodeOverload overload = componentType.GetCustomAttribute<NodeOverload>();
                         if (overload != null)
@@ -287,6 +335,9 @@ namespace NeosWikiAssetGenerator
                         await Task.Delay(10);
                         continue;
                     }
+                    else if (componentCategory.Paths.Any(path => path.StartsWith("Hidden")))
+                        continue;
+
                     try
                     {
                         Component targetComponent = null;
@@ -328,11 +379,12 @@ namespace NeosWikiAssetGenerator
                         }
                         if (targetComponent != null)
                         {
+                            string componentName = componentType.GetCustomAttribute<NodeName>()?.Name ?? StringHelper.BeautifyName(componentType.Name);
                             if (targetComponent is LogixNode node)
                             {
                                 ComponentVisual.LocalPosition = new float3(0, 0, 0.5f);
                                 ComponentVisual.LocalScale = new float3(100f, 100f, 100f);
-                                string componentName = componentType.GetCustomAttribute<NodeName>()?.Name ?? componentType.Name;
+                                
                                 NodeOverload overload = componentType.GetCustomAttribute<NodeOverload>();
                                 if (overload != null)
                                 {
@@ -373,32 +425,18 @@ namespace NeosWikiAssetGenerator
                                 Canvas logixVisual = ComponentVisual.GetComponentInChildren<Canvas>();
                                 float aspectRatio = logixVisual.Size.Value.y / logixVisual.Size.Value.x;
                                 ComponentCamera.OrthographicSize.Value = logixVisual.Size.Value.y / 20.0f;
-                                Bitmap2D logixTex = await ComponentCamera.RenderToBitmap(new int2(128, (int)(128.0 * aspectRatio)));
+                                Bitmap2D logixImage = await ComponentCamera.RenderToBitmap(new int2(128, (int)(128.0 * aspectRatio)));
+                                string logixWikiEntry = ComposeLogixWikiEntry(componentType, node, componentName, componentSafeName, componentCategory.Paths);
                                 foreach (string path in componentCategory.Paths)
                                 {
                                     Directory.CreateDirectory($"{targetPath}{path}\\");
-                                    logixTex.Save($"{targetPath}{path}\\{componentSafeName}Node.png", 100, true);
-                                }
-
-                                string logixWikiEntry = ComposeLogixWikiEntry(componentType, node, componentName, componentSafeName);
-
-                                foreach (string path in componentCategory.Paths)
-                                {
-                                    Directory.CreateDirectory($"{targetPath}{path}\\");
-                                    string[] pathParts = path.Split('/');
-                                    string infoboxOutput = logixWikiEntry;
-                                    if (pathParts.Length > 1)
-                                    {
-                                        infoboxOutput += "[[Category:" + string.Join(": ", pathParts) + "{{#translation:}}]]\r\n"
-                                        + "{{:NodeMenu-" + string.Join("-", pathParts.Skip(1)) + "{{#translation:}}}}\r\n";
-                                    }
-
-                                    File.WriteAllText($"{targetPath}{path}\\{componentSafeName}.txt", infoboxOutput);
+                                    logixImage.Save($"{targetPath}{path}\\{componentSafeName}Node.png", 100, true);
+                                    File.WriteAllText($"{targetPath}{path}\\{componentSafeName}.txt", logixWikiEntry);
                                 }
 
                                 ComponentSlot.Destroy();
                                 while (!ComponentSlot.IsDestroyed)
-                                    await Task.Delay(500);
+                                    await Task.Delay(50);
 
                                 ComponentVisual.DestroyChildren();
                                 ComponentSlot = Slot.AddSlot("ComponentTarget", false);
@@ -407,6 +445,7 @@ namespace NeosWikiAssetGenerator
                             }
                             else
                             {
+                                VerticalLayout content = null;
                                 UIBuilder ui = new UIBuilder(ComponentVisual, 800, 5000, 0.1f);
                                 ui.Style.MinHeight = 30f;
                                 ui.Style.ForceExpandHeight = false;
@@ -415,7 +454,7 @@ namespace NeosWikiAssetGenerator
                                 ui.Style.MinHeight = 30f;
                                 ui.Style.PreferredHeight = 30f;
                                 ui.Style.ForceExpandHeight = false;
-                                VerticalLayout content = ui.VerticalLayout(4f, 10f, Alignment.TopLeft);
+                                content = ui.VerticalLayout(4f, 10f, Alignment.TopLeft);
                                 lastContent = content;
                                 ui.Style.ChildAlignment = Alignment.TopLeft;
                                 {
@@ -438,26 +477,19 @@ namespace NeosWikiAssetGenerator
                                 else
                                     WorkerInspector.BuildInspectorUI(targetComponent, ui);
                                 await Task.Delay(100);
-                                //content.LayoutRectHeightChanged();
-                                double aspectRatio = ((double)content.RectTransform.BoundingRect.height + 5.0) / (double)content.RectTransform.BoundingRect.width;
+
+                                double aspectRatio = (content.RectTransform.BoundingRect.height + 5.0) / content.RectTransform.BoundingRect.width;
 
                                 ComponentVisual.LocalPosition = new float3(0, ((((content.RectTransform.BoundingRect.height / 2.0f) - content.RectTransform.BoundingRect.Center.y) / 2.0f) + 5.0f) * 0.1f, 0.5f);
                                 ComponentCamera.OrthographicSize.Value = (content.RectTransform.BoundingRect.height + 5) / 20.0f;
                                 await new ToWorld();
-                                Bitmap2D logixTex = await ComponentCamera.RenderToBitmap(new int2(400, (int)(400 * aspectRatio)));
+                                Bitmap2D componentImage = await ComponentCamera.RenderToBitmap(new int2(400, (int)(400 * aspectRatio)));
+                                string componentWikiEntry = ComposeComponentWikiEntry(componentType, targetComponent, componentName, componentSafeName, componentCategory.Paths);
                                 foreach (string path in componentCategory.Paths)
                                 {
                                     Directory.CreateDirectory($"{targetPath}{path}\\");
-                                    logixTex.Save($"{targetPath}{path}\\{componentSafeName}Component.png", 100, true);
-                                }
-                                string componentWikiEntry = ComposeComponentWikiEntry(componentType, targetComponent, componentSafeName);
-                                foreach (string path in componentCategory.Paths)
-                                {
-                                    Directory.CreateDirectory($"{targetPath}{path}\\");
-                                    string[] pathParts = path.Split('/');
-                                    string infoboxOutput = componentWikiEntry;
-                                    infoboxOutput += "[[Category:Components:" + string.Join(":", pathParts) + "{{#translation:}}|" + componentType.Name + " (Component){{#translation:}}]]";
-                                    File.WriteAllText($"{targetPath}{path}\\{componentSafeName}.txt", infoboxOutput);
+                                    componentImage.Save($"{targetPath}{path}\\{componentSafeName}Component.png", 100, true);
+                                    File.WriteAllText($"{targetPath}{path}\\{componentSafeName}.txt", componentWikiEntry);
                                 }
                             }
 
@@ -501,7 +533,7 @@ namespace NeosWikiAssetGenerator
 
         }
 
-        private string ComposeLogixWikiEntry(Type componentType, LogixNode node, string componentName, string componentSafeName)
+        private string ComposeLogixWikiEntry(Type componentType, LogixNode node, string componentName, string componentSafeName, string[] componentPaths)
         {
 
             StringBuilder infoboxBuilder = new StringBuilder();
@@ -580,27 +612,31 @@ namespace NeosWikiAssetGenerator
             infoboxBuilder.AppendLine("}}");
             infoboxBuilder.AppendLine();
             infoboxBuilder.AppendLine("<!--T:2-->");
-            infoboxBuilder.AppendLine("== Intoduction ==");
+            infoboxBuilder.AppendLine("The '''" + componentName + "''' node");
+            infoboxBuilder.AppendLine("== Usage == <!--T:3-->");
             infoboxBuilder.AppendLine();
-            infoboxBuilder.AppendLine("<!--T:3-->");
-            infoboxBuilder.AppendLine("== Usage == ");
+            infoboxBuilder.AppendLine("== Examples == <!--T:4-->");
             infoboxBuilder.AppendLine();
-            infoboxBuilder.AppendLine("<!--T:4-->");
-            infoboxBuilder.AppendLine("== Examples ==");
-            infoboxBuilder.AppendLine();
-            infoboxBuilder.AppendLine("<!--T:5-->");
-            infoboxBuilder.AppendLine("== Node Menu ==");
+            infoboxBuilder.AppendLine("== Node Menu == <!--T:5-->");
 
             infoboxBuilder.AppendLine("</translate>");
+            infoboxBuilder.AppendLine("[[Category:LogixStubs]]");
             if (componentType.IsGenericType)
                 infoboxBuilder.AppendLine("[[Category:Generics{{#translation:}}]]");
-            infoboxBuilder.AppendLine("[[Category:LogiX{{#translation:}}]]");
+            infoboxBuilder.AppendLine("[[Category:LogiX{{#translation:}}|" + componentName + "]]");
+            foreach (string path in componentPaths)
+            {
+                if (path != "LogiX")
+                {
+                    infoboxBuilder.AppendLine("[[Category:" + path.Replace('/', ':') + "{{#translation:}}|" + componentName + "]]");
+                }
+                infoboxBuilder.AppendLine("{{:NodeMenu" + path.Replace('/', '-').Replace("LogiX", "") + "{{#translation:}}}}");
+            }
             return infoboxBuilder.ToString();
         }
-
-        private string ComposeComponentWikiEntry(Type componentType, Component component, string componentSafeName)
+        
+        private string ComposeComponentWikiEntry(Type componentType, Component component, string componentName, string componentSafeName, string[] componentPaths)
         {
-            string componentName = componentType.Name;
             StringBuilder infoboxBuilder = new StringBuilder();
             infoboxBuilder.AppendLine("<languages></languages>");
             infoboxBuilder.AppendLine("<translate>");
@@ -612,10 +648,7 @@ namespace NeosWikiAssetGenerator
             infoboxBuilder.AppendLine("}}");
             infoboxBuilder.AppendLine();
             infoboxBuilder.AppendLine("<!--T:2-->");
-            infoboxBuilder.AppendLine("== Intoduction ==");
-            infoboxBuilder.AppendLine();
-            infoboxBuilder.AppendLine("<!--T:3-->");
-            infoboxBuilder.AppendLine("== Usage ==");
+            infoboxBuilder.AppendLine("== Fields ==");
             infoboxBuilder.AppendLine("{{Table ComponentFields");
             BuildSyncMembers(component, 3);
 
@@ -630,27 +663,20 @@ namespace NeosWikiAssetGenerator
                             Type memberType = target.GetSyncMemberFieldInfo(index).FieldType;
                             if (memberType.IsGenericType && memberType.GenericTypeArguments.Length > 0)
                             {
-                                Type syncMemberType = memberType.GenericTypeArguments[0];
-                                //Check if this is a nested generic - i.e: Sync<Sync<float>>
-                                if (syncMemberType.IsGenericType)
+                                Type t = FindOverload(memberType);
+                                if (t != null)
                                 {
-                                    Type memberGenericType = syncMemberType.GetGenericTypeDefinition();
-                                    string memberTypeName = syncMemberType.GetNiceName();
-                                    int bracketIndex = memberTypeName.IndexOf('<');
-                                    if (bracketIndex > 0 && bracketIndex < memberTypeName.Length - 1)
-                                    {
-                                        char[] typeChars = memberTypeName.ToCharArray();
-                                        typeChars[0] = char.ToUpper(typeChars[0]);
-                                        typeChars[bracketIndex + 1] = char.ToUpper(typeChars[bracketIndex + 1]);
-                                        memberTypeName = new string(typeChars);
-                                    }
-                                    //We want to link to the generic base (i.e Sync<T> or Sync`1), but we want to show the full name (Sync<float>);
-                                    infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{memberGenericType.Name.UppercaseFirst()}|TypeString{index - indexOffset}={memberTypeName}| ");
+                                    if (t.IsGenericType)
+                                        infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{t.Name.UppercaseFirst()}|TypeString{index - indexOffset}={t.GetNiceName().UppercaseFirst()}|");
+                                    else
+                                        infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{t.GetNiceName().UppercaseFirst()}|");
                                 }
                                 else
                                 {
-                                    infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{syncMemberType.GetNiceName().UppercaseFirst()}| ");
+                                    componentErrors.AppendLine("Failed to get overload for: " + memberType.GetNiceName() + ", using defaults");
+                                    infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{memberType.Name.UppercaseFirst()}|TypeString{index - indexOffset}={memberType.GetNiceName().UppercaseFirst()}|");
                                 }
+
                             }
                             else
                             {
@@ -674,21 +700,58 @@ namespace NeosWikiAssetGenerator
 
             infoboxBuilder.AppendLine("}}");
             infoboxBuilder.AppendLine();
-            infoboxBuilder.AppendLine("<!--T:4-->");
-            infoboxBuilder.AppendLine("== Behavior ==");
+            infoboxBuilder.AppendLine("<!--T:3-->");
+            infoboxBuilder.AppendLine("== Usage ==");
             infoboxBuilder.AppendLine();
-            infoboxBuilder.AppendLine("<!--T:5-->");
+            infoboxBuilder.AppendLine("<!--T:4-->");
             infoboxBuilder.AppendLine("== Examples ==");
             infoboxBuilder.AppendLine();
-            infoboxBuilder.AppendLine("<!--T:6-->");
+            infoboxBuilder.AppendLine("<!--T:5-->");
             infoboxBuilder.AppendLine("== Related Components ==");
             infoboxBuilder.AppendLine("</translate>");
+            infoboxBuilder.AppendLine("[[Category:ComponentStubs]]");
             if (componentType.IsGenericType)
                 infoboxBuilder.AppendLine("[[Category:Generics{{#translation:}}]]");
-            infoboxBuilder.AppendLine("[[Category:Components{{#translation:}}|" + componentName + " (Component){{#translation:}}]]");
+            infoboxBuilder.AppendLine("[[Category:Components{{#translation:}}|" + componentName + "]]");
+            foreach (string path in componentPaths)
+            {
+                infoboxBuilder.AppendLine("[[Category:Components:" + path.Replace('/', ':') + "{{#translation:}}|" + componentName + "]]");
+            }
             return infoboxBuilder.ToString();
         }
 
+        private Type FindOverload(Type inputType)
+        {
+            Type returnType = null;
+            Type inputSubType = null;
+            inputSubType = inputType.FindGenericBaseClass(typeof(SyncRef<>));
+            if (inputSubType == null)
+                inputSubType = inputType.EnumerateInterfacesRecursively().FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IValue<>));
+
+            if (inputSubType != null)
+                returnType = inputSubType.GetGenericArguments()[0];
+
+            return returnType;
+        }
+
+        private IEnumerable<string> GetBaseTypes(Type parentType)
+        {
+            List<Type> implementedTypes = new List<Type>(20);
+            IEnumerable<Type> availableTypes = Assembly.GetAssembly(parentType).GetTypes();
+
+            Type currentType = parentType;
+
+            while (currentType != null)
+            { 
+                implementedTypes.AddRange(availableTypes.Where(type => type != null && currentType.IsSubclassOf(type)));
+                implementedTypes.AddRange(currentType.GetInterfaces());
+                currentType = currentType.BaseType;
+                if (currentType == typeof(object))
+                    break;
+            }
+
+            return implementedTypes.Distinct().Select(inheritedType => inheritedType.FullName);
+        }
         private void BuildTypeBlacklist()
         {
             TypeBlacklist = new List<Type>()
@@ -697,24 +760,141 @@ namespace NeosWikiAssetGenerator
                 typeof(DebugCrash),
                 typeof(DebugFingerPoseCompensation), //Causes hard crash
 
-                ///These crash, but might be fixable
-                //typeof(DynamicValueVariable<>),
-                typeof(DataPresetValue<>),
-                //typeof(ButtonValueShift<>),
-                //typeof(Slider<>),
-
                  //These break things when spawned
                 typeof(FullBodyCalibrator),
-                //typeof(FullBodyCalibratorDialog),
+                typeof(FullBodyCalibratorDialog),
                 typeof(FrooxEngine.Undo.UndoManager),
+                typeof(LightGizmo),
+                typeof(TextGizmo),
+                typeof(DestroyWithoutChildren),
+                typeof(StoppedPlayableCleaner),
+                typeof(EngineDebugDialog),
+                typeof(DepositAddressDialog),
+                typeof(FriendsDialog),
+                typeof(NotificationPanel),
+                typeof(UserProfileDialog),
+                typeof(SessionControlDialog),
+                typeof(SettingsDialog),
+                typeof(WorldSwitcher),
+                typeof(WorldOrbSaver),
+                typeof(LoginDialog),
+                typeof(FileBrowser),
+                typeof(StaticTextureProvider<,,>),
+                typeof(StaticAssetProvider<,,>),
 
                 //This doesn't seem useful to anyone except Frooxius
                 typeof(LegacyRadiantScreenWrapper<>),
+                typeof(LegacyRadiantScreenWrapper),
+                typeof(LegacyRadiantScreenWrapperHelper),
                 //Not sure how to use this
                 typeof(ImplementableComponent<>),
                 typeof(QuantityTextEditorParser<>),
 
+                //
+                typeof(DynamicVariableBase<>),
+                typeof(DynamicVariableResetBase<>),
+                typeof(ImportDialog),
+                typeof(BoneChainHapticPointMapper),
+                typeof(HapticFilter),
+                typeof(HapticPointSamplerBase),
+                typeof(HapticPointMapper),
+                typeof(RaycastTouchSource),
+                typeof(LocomotionModule),
+                typeof(TextFacetPreset),
+                typeof(FacetContainer),
+                typeof(FacetPreset),
+                typeof(WorldItem),
+                typeof(MaterialProviderBase<>),
+                typeof(PBSLerpMaterial),
+                typeof(PBS_RimMaterial),
+                typeof(PBS_Material),
+                typeof(PBS_StencilMaterial),
+                typeof(PBS_ColorMask),
+                typeof(PBS_ColorSplat),
+                typeof(PBS_DisplaceMaterial),
+                typeof(PBS_DistanceLerpMaterial),
+                typeof(PBS_Intersect),
+                typeof(PBS_MultiUV_Material),
+                typeof(PBS_Slice),
+                typeof(PBS_DualSidedMaterial),
+                typeof(PBS_TriplanarMaterial),
+                typeof(PBS_VertexColor),
+                typeof(SingleShaderUI_StencilMaterial),
+                typeof(UI_StencilMaterial),
+                typeof(ProceduralTextureBase),
+                typeof(ProceduralTexture),
+                typeof(ProceduralAssetProvider<>),
+                typeof(AssetProvider<>),
+                typeof(DynamicAssetProvider<>),
+                typeof(Gizmo),
+                typeof(MemberEditor),
+                typeof(SkyboxTemplate),
+                typeof(BrushTip),
+                typeof(ParticleBrushTip),
+                typeof(PointBrushTip),
+                typeof(OrbCartridgeTip),
+                typeof(AutoAddChildrenBase),
+                typeof(UserRootComponent),
+                typeof(TextEditorParser<>),
+                typeof(PermissionsComponent),
+                typeof(CircleThumbnailItem),
+                typeof(VirtualKeyBase),
+                typeof(WorldOrbPlateManager),
+                typeof(SettingSync),
+                typeof(NeosFieldBase),
+                typeof(NeosUIElement),
+                typeof(TouchSource),
+                typeof(ParticleEmitter),
+                typeof(ProceduralSky),
+                typeof(ProceduralMesh),
+                typeof(Draggable),
+                typeof(ToolTip),
+                typeof(Tool),
+                typeof(Collider),
+                typeof(BrowserDialog),
+                typeof(BrowserItem),
+                typeof(ImplementableComponent),
+                typeof(LogixNode),
+                typeof(PlaybackSetter),
+                typeof(ControllerNode<>),
+                typeof(TextFieldNodeBase<>),
+                typeof(WebsocketBaseNode),
+                typeof(LocalFireOnBool),
+                typeof(FireOnBool),
+                typeof(AnchorEventNode),
+                typeof(TwitchNode),
+                typeof(IK),
+                typeof(SolverManager),
+                typeof(ButtonRelayBase),
+                typeof(Graphic),
+                typeof(InteractionElement),
+                typeof(Radio),
+                typeof(DirectionalLayout),
+                typeof(LayoutController),
+                typeof(UIComponent),
+                typeof(UIComputeComponent),
+                typeof(UIController),
+                typeof(LocalAssetProvider<>),
+                typeof(MaterialPropertyBlockProvider),
+                typeof(MaterialProvider),
+                typeof(SingleShaderMaterialProvider),
+                typeof(PeriodicWaveClip),
+                typeof(ProceduralCubemapBase),
+                typeof(ProceduralCubemap),
+                typeof(ProceduralFont),
+                typeof(ProceduralAudioClip),
+                typeof(ProceduralMesh),
+                typeof(WizardForm),
+                typeof(ImportDialog),
+               typeof(LogixOperator<>),
+               typeof(DualInputOperator<>),
+               typeof(MultiInputOperator<>),
+               typeof(VariableInputOutputNode),
+               typeof(CastClass<,>),
+               typeof(CastNode<,>),
+               typeof(FireOnChangeBase<>)
             };
+           
         }
 
         /// <summary>
@@ -725,7 +905,6 @@ namespace NeosWikiAssetGenerator
             GenericTypeInstantiationMap = new Dictionary<Type, Type>()
             {
                 {typeof(AssetProxy<>),typeof(AssetProxy<IAsset>) },
-                {typeof(LocalAssetProvider<>), typeof(LocalAssetProvider<Font>) },
                 {typeof(AssetLoader<>),typeof(AssetLoader<IAsset>) },
                 {typeof(ReferenceOptionDescriptionDriver<>), typeof(ReferenceOptionDescriptionDriver<IWorldElement>) },
                 {typeof(DynamicReference<>), typeof(DynamicReference<IWorldElement>) },
@@ -739,23 +918,15 @@ namespace NeosWikiAssetGenerator
                 {typeof(DelegateProxySource<>), typeof(DelegateProxySource<Action>) },
                 {typeof(ValueField<>), typeof(ValueField<int>) },
                 {typeof(ValueFieldProxy<>), typeof(ValueFieldProxy<int>) },
-                {typeof(MaterialProviderBase<>), typeof(MaterialProviderBase<Material>) },
-                {typeof(ProceduralAssetProvider<>), typeof(ProceduralAssetProvider<Texture2D>) },
-                {typeof(AssetProvider<>), typeof(AssetProvider<Texture2D>) },
-                {typeof(DynamicAssetProvider<>), typeof(DynamicAssetProvider<Texture2D>) },
                 {typeof(MultiTextureFader<>), typeof(MultiTextureFader<Texture2D>) },
-                {typeof(TextEditorParser<>), typeof(TextEditorParser<int>) },
-                //{typeof(QuantityTextEditorParser<>), typeof(QuantityTextEditorParser<QuantityX.Angle>) },
                 {typeof(DelegateTag<>), typeof(DelegateTag<Action>) },
                 {typeof(ValueTag<>), typeof(ValueTag<int>) },
                 {typeof(CallbackValueArgument<>), typeof(CallbackValueArgument<int>) },
-               // {typeof(StaticAssetProvider<,,>), typeof(StaticAssetProvider<Texture2D, DummyMetadata, FrooxEngine.TextureVariantDescriptor>) },
                 {typeof(GenericModalDialogSpawner<>), typeof(GenericModalDialogSpawner<WikiAssetGenerator>) },
                 {typeof(GenericUserspaceDialogSpawner<>), typeof(GenericUserspaceDialogSpawner<WikiAssetGenerator>) },
                 {typeof(ControllerNode<>), typeof(ControllerNode<FrooxEngine.IndexController>) },
                 {typeof(EnumInput<>), typeof(EnumInput<Enum>) },
                 {typeof(TextFieldNodeBase<>), typeof(TextFieldNodeBase<string>) },
-                //{typeof(FireOnChangeBase<>), typeof(FireOnChangeBase<int>) },
                 {typeof(EnumToInt<>), typeof(EnumToInt<Enum>) },
                 {typeof(ButtonDelegateRelay<>), typeof(ButtonDelegateRelay<Action>) },
                 {typeof(ReferenceField<>), typeof(ReferenceField<IWorldElement>) },
@@ -770,14 +941,19 @@ namespace NeosWikiAssetGenerator
                 {typeof(ReferenceMultiplexer<>), typeof(ReferenceMultiplexer<IWorldElement>) },
                 {typeof(NeosEnumEditor<>), typeof(NeosEnumEditor<Enum>) },
                 {typeof(AssetFrameSlot<>), typeof(AssetFrameSlot<ITexture2D>) },
-                //{typeof(LogixOperator<>), typeof(LogixOperator<int>) },
-                //{typeof(DualInputOperator<>), typeof(DualInputOperator<int>) },
-                //{typeof(EqualsNode<>), typeof(EqualsNode<float>) },
-                {typeof(FrooxEngine.LogiX.Data.DynamicVariableInput<>), typeof(FrooxEngine.LogiX.Data.DynamicVariableInput<string>) },
-                {typeof(FrooxEngine.LogiX.Data.DynamicVariableInputWithEvents<>), typeof(FrooxEngine.LogiX.Data.DynamicVariableInputWithEvents<string>) },
+                {typeof(DynamicVariableInput<>), typeof(DynamicVariableInput<string>) },
+                {typeof(DynamicVariableInputWithEvents<>), typeof(DynamicVariableInputWithEvents<string>) },
                 {typeof(Slider<>), typeof(Slider<float>) },
                 {typeof(ButtonValueShift<>), typeof(ButtonValueShift<float>) },
-                {typeof(NullCoalesce<>), typeof(NullCoalesce<Object>) }
+                {typeof(NullCoalesce<>), typeof(NullCoalesce<Object>) },
+                //{typeof(DataPresetValue<>), typeof(DataPresetValue<int>) }
+                {typeof(WriteReferenceNode<>), typeof(WriteReferenceNode<Slot>) },
+                {typeof(ReferenceRegister<>), typeof(ReferenceRegister<Slot>)},
+                {typeof(ReferenceTarget<>), typeof(ReferenceTarget<Slot>) },
+                {typeof(StandaloneRectMesh<>), typeof(StandaloneRectMesh<AudioSourceWaveformMesh>) },
+                {typeof(AudioStreamMetadata<>), typeof(AudioStreamMetadata<StereoSample>) },
+                {typeof(BooleanReferenceDriver<>), typeof(BooleanReferenceDriver<IWorldElement>) },
+                {typeof(ReferenceTag<>), typeof(ReferenceTag<IWorldElement>) }
             };
         }
         /// <summary>
@@ -859,14 +1035,18 @@ namespace NeosWikiAssetGenerator
             return true;
         }
     }
+
     class ComponentPathNode : IComparable
     {
         public string Name { get; set; }
+        [JsonIgnore]
         public int Depth { get; set; } = 0;
-        public List<ComponentPathNode> Children { get; set; } = new List<ComponentPathNode>();
+        public string TypeName { get; set; }
+        public List<string> Inherits { get; set; }
+        public List<ComponentPathNode> Children { get; set; } = null;
         public int CompareTo(object other)
         {
-            return ((ComponentPathNode)other).Name.CompareTo(Name);
+            return Name.CompareTo(((ComponentPathNode)other).Name) ;
         }
     }
 }
