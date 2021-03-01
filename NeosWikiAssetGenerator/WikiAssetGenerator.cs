@@ -29,6 +29,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace NeosWikiAssetGenerator
 {
@@ -41,6 +42,7 @@ namespace NeosWikiAssetGenerator
         private StringBuilder componentErrors = new StringBuilder();
         public readonly Sync<string> ComponentName;
         public readonly Sync<int> CaptureIndex;
+
         VerticalLayout lastContent = null;
         Text componentProgress = null;
         protected override void OnAttach()
@@ -52,10 +54,19 @@ namespace NeosWikiAssetGenerator
             //GenerateInfoBoxes();
             //GenerateWikiIndexPages();
         }
-
+        protected override void OnAwake()
+        {
+            base.OnAwake();
+            File.Delete("D:\\NeosWiki\\generatorLog.txt");
+            Log.Logger =  new LoggerConfiguration()
+                .WriteTo.File("D:\\NeosWiki\\generatorLog.txt")
+                .CreateLogger();
+        }
         public void BuildInspectorUI(UIBuilder ui)
         {
             WorkerInspector.BuildInspectorUI(this, ui);
+
+            ui.Button("NEW Generate Component and LogiX visuals", (b, e) => { StartTask(async () => { await GenerateNew(); }); });
             ui.Button("Generate named Component", (b, e) => { StartTask(async () => { await GenerateComponentVisuals(ComponentName.Value); }); });
             ui.Button("Generate Component and LogiX visuals", (b, e) => { StartTask(async () => { await GenerateComponentVisuals(); }); });
             ui.Button("Generate Wiki InfoBoxes and tables", (b, e) => { GenerateInfoBoxes(); });
@@ -64,6 +75,93 @@ namespace NeosWikiAssetGenerator
             componentProgress = ui.Text("", true, Alignment.MiddleCenter, false);
         }
 
+        private async Task GenerateNew()
+        {
+            ComponentTypeProcessor ComponentProcessor = new ComponentTypeProcessor();
+            LogixTypeProcessor LogixProcessor = new LogixTypeProcessor();
+            IEnumerable<Type> frooxEngineTypes = AppDomain.CurrentDomain.GetAssemblies().Where(T => T.GetName().Name == "FrooxEngine").SelectMany(T => T.GetTypes());
+            IEnumerable<Type> frooxEngineComponentTypes = frooxEngineTypes.Where(T => T.Namespace != null && T.Namespace.StartsWith("FrooxEngine")).Where(T => T.IsSubclassOf(typeof(Component)) || T.IsSubclassOf(typeof(LogixNode)));
+
+            BuildTypeBlacklist();
+            BuildOverloadPreferences();
+            BuildTypeMap();
+            Camera ComponentCamera = Slot.GetComponentOrAttach<Camera>();
+            ComponentCamera.Projection.Value = CameraProjection.Orthographic;
+            ComponentCamera.Clear.Value = CameraClearMode.Color;
+            ComponentCamera.ClearColor.Value = new color(new float4());
+            ComponentCamera.Postprocessing.Value = false;
+            ComponentCamera.RenderShadows.Value = false;
+            ComponentCamera.SelectiveRender.Clear();
+            ComponentCamera.SelectiveRender.Add();
+            NeosTypeProcessor.VisualCaptureCamera = ComponentCamera;
+
+            NeosTypeProcessor.TypeBlacklist = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText("D:\\NeosWiki\\TypeBlacklist.json"));
+
+            ComponentProcessor.Overloads = JsonConvert.DeserializeObject<Dictionary<string,string>>(File.ReadAllText("D:\\NeosWiki\\ComponentOverloads.json"));
+            if (ComponentProcessor.Overloads == null)
+                ComponentProcessor.Overloads = new Dictionary<string, string>();
+
+            LogixProcessor.Overloads = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("D:\\NeosWiki\\LogixOverloads.json"));
+            if (LogixProcessor.Overloads == null)
+                LogixProcessor.Overloads = new Dictionary<string, string>();
+
+            List<string> logixErrorTypes = new List<string>();
+            List<string> componentErrorTypes = new List<string>();
+            try
+            {
+                foreach (Type neosType in frooxEngineComponentTypes)
+                {
+                    NeosTypeProcessor.VisualSlot = Slot.AddSlot("Visual", false); ;
+                    NeosTypeProcessor.InstanceSlot = Slot.AddSlot("ComponentTarget", false);
+                    ComponentCamera.SelectiveRender[0] = NeosTypeProcessor.VisualSlot;
+                    NeosTypeProcessor.VisualSlot.LocalPosition = new float3(0, 0, 0.5f);
+
+                    try
+                    {
+                        if (ComponentProcessor.ValidateProcessor(neosType))
+                        {
+                            object instance = ComponentProcessor.CreateInstance(neosType);
+                            if (instance is null)
+                                continue;
+                            await ComponentProcessor.GenerateVisual(instance, instance.GetType());
+                            await ComponentProcessor.GenerateWikiData(instance, instance.GetType());
+                            ComponentProcessor.DestroyInstance(instance);
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        componentErrorTypes.Add(neosType.FullName);
+                        Log.Error(ex, "Component generation failed for {typeName}:", neosType.FullName);
+                    }
+                    try
+                    {
+                        if (LogixProcessor.ValidateProcessor(neosType))
+                        {
+                            object instance = LogixProcessor.CreateInstance(neosType);
+                            if (instance is null)
+                                continue;
+                            await LogixProcessor.GenerateVisual(instance, instance.GetType());
+                            await LogixProcessor.GenerateWikiData(instance, instance.GetType());
+                            LogixProcessor.DestroyInstance(instance);
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        logixErrorTypes.Add(neosType.FullName);
+                        Log.Error(ex, "LogiX generation failed for {typeName}:", neosType.FullName);
+                    }
+                    NeosTypeProcessor.VisualSlot.Destroy(false);
+                    NeosTypeProcessor.InstanceSlot.Destroy(false);
+                    await new Updates(5);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Processor failed:");
+            }
+            File.WriteAllText("D:\\NeosWiki\\logixErrorTypes.json", JsonConvert.SerializeObject(logixErrorTypes, Formatting.Indented));
+            File.WriteAllText("D:\\NeosWiki\\componentErrorTypes.json", JsonConvert.SerializeObject(componentErrorTypes, Formatting.Indented));
+        }
         private void GenerateInfoBoxes()
         {
             /*
@@ -287,6 +385,7 @@ namespace NeosWikiAssetGenerator
                 ComponentCamera.RenderShadows.Value = false;
                 ComponentCamera.SelectiveRender.Clear();
                 ComponentCamera.SelectiveRender.Add(ComponentVisual);
+
                 IEnumerable<Type> frooxEngineTypes = AppDomain.CurrentDomain.GetAssemblies().Where(T => T.GetName().Name == "FrooxEngine").SelectMany(T => T.GetTypes());
                 IEnumerable<Type> frooxEngineComponentTypes = frooxEngineTypes.Where(T => T.Namespace != null && T.Namespace.StartsWith("FrooxEngine")).Where(T => T.IsSubclassOf(typeof(Component)) || T.IsSubclassOf(typeof(LogixNode))).Where(T => targetComponentName == null || T.Name.Contains(targetComponentName));
                 MethodInfo LogixGenerateUI = typeof(LogixNode).GetMethod("GenerateUI", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -966,7 +1065,7 @@ namespace NeosWikiAssetGenerator
             {
                 {"BoundingBoxEncapsulate",typeof(EncapsulateBounds)},
                 {"Display",typeof(Display_Dummy)},
-                {"IndexOfFirstMatch",typeof(IndexOfFirstMatch<char>)},
+                {"IndexOfFirstMatch",typeof(IndexOfFirstMatch<dummy>)},
                 {"FindCharacterController",typeof(FindCharacterControllerFromUser)},
                 {"SimplexNoise",typeof(SimplexNoise_1D)},
                 {"ToString", typeof(ToString_DateTime) },
@@ -1005,6 +1104,8 @@ namespace NeosWikiAssetGenerator
                 {"Deconstruct2", typeof(Deconstruct_Float2) },
                 {"Construct3", typeof(Construct_Float3) },
                 {"Deconstruct3", typeof(Deconstruct_Float3) },
+                {"Construct4", typeof(Construct_Bool4) },
+                {"Deconstruct4", typeof(Deconstruct_Bool4) },
                 {"PackRows", typeof(PackRows_Float2x2) },
                 {"UnpackRows", typeof(UnpackRows_Float2x2) },
                 {"PackColumns", typeof(PackColumns_Float2x2) },
@@ -1015,6 +1116,26 @@ namespace NeosWikiAssetGenerator
                 {"Determinant", typeof(Determinant_Float2x2) },
                 {"Dot", typeof(Dot_Float2) },
                 {"Conditional", typeof(Conditional_Float)},
+                {"All", typeof(All_Bool2)},
+                {"Any", typeof(Any_Bool2) },
+                {"None", typeof(None_Bool2) },
+                {"Magnitude", typeof(Magnitude_Float2) },
+                {"SqrMagnitude", typeof(SqrMagnitude_Float2) },
+                {"Angle", typeof(Angle_Float2) },
+                {"Mask", typeof(Mask_Float2) },
+                {"Distance", typeof(Distance_Float2) },
+                {"Normalized", typeof(Normalized_Float2) },
+                {"Project", typeof(Project_Float2) },
+                {"MatrixElement", typeof(MatrixElement_Float2x2) },
+                {"Transpose", typeof(Transpose_Float2x2) },
+                {"Decomposed Scale", typeof(Decomposed_Scale_Float3x3)},
+                {"Decomposed Rotation", typeof(Decomposed_Rotation_Float3x3) },
+                {"Compose Scale", typeof(Compose_ScaleFloat3x3) },
+                {"Compose Rotation", typeof(Compose_Rotation_Float3x3) },
+                {"Compose ScaleRotation", typeof(Compose_ScaleRotation_Float3x3) },
+                {"Decomposed Position", typeof(Decomposed_Position_Float4x4) },
+                {"Compose TRS Matrix", typeof(ComposeTRS_Float4x4) },
+                {"ConstructColor", typeof(Construct_Color) }
             };
         }
         enum Enum
