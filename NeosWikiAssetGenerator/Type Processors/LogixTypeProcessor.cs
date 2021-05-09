@@ -3,7 +3,6 @@ using CodeX;
 using FrooxEngine;
 using FrooxEngine.LogiX;
 using FrooxEngine.UIX;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,14 +11,14 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeosWikiAssetGenerator
+namespace NeosWikiAssetGenerator.Type_Processors
 {
     public class LogixTypeProcessor : NeosTypeProcessor
     {
         static readonly MethodInfo LogixGenerateUIMethod = typeof(LogixNode).GetMethod("GenerateUI", BindingFlags.Instance | BindingFlags.NonPublic);
 
         public List<string> OverloadCache = new List<string>();
-
+        public Dictionary<string, string> Overloads { get; set; } = new Dictionary<string, string>();
         public override bool ValidateProcessor(Type neosType)
         {
             NodeOverload typeOverload = neosType.GetCustomAttribute<NodeOverload>();
@@ -39,10 +38,9 @@ namespace NeosWikiAssetGenerator
         public override object CreateInstance(Type neosType)
         {
             string targetInstanceType = GetOverload(neosType);
-            Log.Information("Logix: Attempt attach {typeName}", targetInstanceType);
             if (targetInstanceType is null)
             {
-                Log.Error("Missing LogiX overload for {typeName}", neosType.FullName);
+               UniLog.Log($"Missing LogiX overload for {neosType.FullName}");
                 return null;
             }
             return InstanceSlot.AttachComponent(targetInstanceType);
@@ -70,7 +68,7 @@ namespace NeosWikiAssetGenerator
             }
         }
 
-        public async override Task GenerateWikiData(object typeInstance, Type neosType, bool force = false)
+        public async override Task GenerateData(object typeInstance, Type neosType, bool force = false)
         {
             LogixNode targetInstance = typeInstance as LogixNode;
             Category typeCategory = GetCategory(neosType);
@@ -193,7 +191,7 @@ namespace NeosWikiAssetGenerator
             return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Logix\\{path}\\{typeSafeName}Node.png"));
         }
 
-        public override bool NeedsWikiData(string typeSafeName, Category typeCategory)
+        public override bool NeedsData(string typeSafeName, Category typeCategory)
         {
             return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Logix\\{path}\\{typeSafeName}.txt"));
         }
@@ -201,12 +199,11 @@ namespace NeosWikiAssetGenerator
         {
             LogixGenerateUIMethod.Invoke(targetInstance, new object[] { VisualSlot, 0.0f, 0.0f });
             VisualSlot.LocalScale = new float3(100, 100, 100);
-            await new Updates(15);
+            await new Updates(10);
         }
         private string GetOverload(Type neosType)
         {
             NodeOverload typeOverload = neosType.GetCustomAttribute<NodeOverload>();
-
             if (Overloads.TryGetValue(neosType.FullName, out string overloadTypeString))
                 return overloadTypeString;
             if (typeOverload != null)

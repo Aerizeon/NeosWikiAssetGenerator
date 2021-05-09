@@ -5,17 +5,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Serilog;
 using FrooxEngine.UIX;
 using BaseX;
 using CodeX;
 using System.Threading.Tasks;
 using System.Reflection;
 
-namespace NeosWikiAssetGenerator
+namespace NeosWikiAssetGenerator.Type_Processors
 {
     public class ComponentTypeProcessor : NeosTypeProcessor
     {
+        public Dictionary<string, string> Overloads { get; set; } = new Dictionary<string, string>();
+
         public override bool ValidateProcessor(Type neosType)
         {
             return neosType.IsSubclassOf(typeof(Component)) && !neosType.IsSubclassOf(typeof(LogixNode)) && !TypeBlacklist.Contains(neosType.FullName);
@@ -27,7 +28,7 @@ namespace NeosWikiAssetGenerator
             string targetInstanceType = GetOverload(neosType);
             if (targetInstanceType is null)
             {
-                Log.Error("Missing Component overload for {typeName}", neosType.FullName);
+                UniLog.Log($"Missing Component overload for {neosType.FullName}");
                 return null;
             }
            return InstanceSlot.AttachComponent(targetInstanceType);
@@ -58,7 +59,7 @@ namespace NeosWikiAssetGenerator
             VisualSlot.DestroyChildren();
         }
 
-        public async override Task GenerateWikiData(object typeInstance, Type neosType, bool force = false)
+        public async override Task GenerateData(object typeInstance, Type neosType, bool force = false)
         {
             Component targetInstance = typeInstance as Component;
             Category typeCategory = GetCategory(neosType);
@@ -66,7 +67,7 @@ namespace NeosWikiAssetGenerator
             string typeName = neosType.GetCustomAttribute<NodeName>()?.Name ?? StringHelper.BeautifyName(neosType.Name);
             
 
-            if (!(force || NeedsWikiData(typeSafeName, typeCategory)))
+            if (!(force || NeedsData(typeSafeName, typeCategory)))
                 return;
 
             StringBuilder infoboxBuilder = new StringBuilder();
@@ -123,7 +124,7 @@ namespace NeosWikiAssetGenerator
             return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Components\\{path}\\{typeSafeName}Component.png"));
         }
 
-        public override bool NeedsWikiData(string typeSafeName, Category typeCategory)
+        public override bool NeedsData(string typeSafeName, Category typeCategory)
         {
             return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Components\\{path}\\{typeSafeName}.txt"));
         }
@@ -159,7 +160,7 @@ namespace NeosWikiAssetGenerator
             }
             else
                 WorkerInspector.BuildInspectorUI(targetInstance, ui);
-            await new Updates(15);
+            await new Updates(5);
             return content.RectTransform.BoundingRect;
         }
         private void BuildComponentSyncMembers(StringBuilder infoboxBuilder, Worker target, int indexOffset = 0)
@@ -183,7 +184,7 @@ namespace NeosWikiAssetGenerator
                             }
                             else
                             {
-                                Log.Warning("Missing WriteNode overload for {typeName}", memberType.GetNiceName());
+                                UniLog.Log($"Missing WriteNode overload for {memberType.GetNiceName()}");
                                 infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{memberType.Name.UppercaseFirst()}|TypeString{index - indexOffset}={memberType.GetNiceName().UppercaseFirst()}|");
                             }
 
@@ -209,7 +210,7 @@ namespace NeosWikiAssetGenerator
         }
         private string GetOverload(Type neosType)
         {
-            if (neosType.IsGenericType)
+            if (neosType.IsGenericType || neosType.IsGenericTypeDefinition)
             {
                 if (Overloads.TryGetValue(neosType.FullName, out string overloadTypeString))
                     return overloadTypeString;

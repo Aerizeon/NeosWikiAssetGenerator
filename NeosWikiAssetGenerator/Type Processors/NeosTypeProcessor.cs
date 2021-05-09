@@ -5,17 +5,15 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeosWikiAssetGenerator
+namespace NeosWikiAssetGenerator.Type_Processors
 {
     public class NeosTypeProcessor : INeosTypeProcessor
     {
-        public static string BasePath = "D:\\NeosWiki\\NewGenerator\\";
+        public static string BasePath = "D:\\Data\\NeosWiki\\NewGenerator\\";
         public static List<string> TypeBlacklist = new List<string>();
         public static Camera VisualCaptureCamera;
         public static Slot VisualSlot;
         public static Slot InstanceSlot;
-
-        public Dictionary<string, string> Overloads { get; set; } = new Dictionary<string, string>();
 
         public virtual bool ValidateProcessor(Type neosType)
         {
@@ -28,12 +26,12 @@ namespace NeosWikiAssetGenerator
         }
         public virtual Task GenerateVisual(object typeInstance, Type neosType, bool force = false)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
-        public virtual Task GenerateWikiData(object typeInstance, Type neosType, bool force = false)
+        public virtual Task GenerateData(object typeInstance, Type neosType, bool force = false)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
         public virtual void DestroyInstance(object typeInstance)
@@ -44,7 +42,7 @@ namespace NeosWikiAssetGenerator
         {
             return true;
         }
-        public virtual bool NeedsWikiData(string typeSafeName, Category typeCategory)
+        public virtual bool NeedsData(string typeSafeName, Category typeCategory)
         {
             return true;
         }
@@ -57,6 +55,11 @@ namespace NeosWikiAssetGenerator
         public string GetSafeName(Type neosType)
         {
             return neosType.Name.CoerceValidFileName();
+        }
+
+        public virtual Task Finalize()
+        {
+            return Task.CompletedTask;
         }
     }
 }
