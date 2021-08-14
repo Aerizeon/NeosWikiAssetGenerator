@@ -136,4 +136,9 @@
   "FrooxEngine.LogiX.Assets.AttachAsset`1",
   "FrooxEngine.GenericModalDialogSpawner`1",
   "FrooxEngine.GenericUserspaceDialogSpawner`1",
+  "FrooxEngine.AudioClipPlayerBase",
+  "FrooxEngine.CloudVariableBase",
+  "FrooxEngine.TargettingControllerBase",
+  "FrooxEngine.LogiX.Input.ValueTextFieldNodeBase`1",
+  "FrooxEngine.LogiX.ProgramFlow.DelayNodeBase",
 ]

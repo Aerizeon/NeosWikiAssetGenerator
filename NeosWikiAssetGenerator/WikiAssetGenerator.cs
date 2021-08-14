@@ -36,6 +36,7 @@ namespace NeosWikiAssetGenerator
     [Category("Add-Ons/Generators/Wiki")]
     public class WikiAssetGenerator : Component, ICustomInspector
     {
+        public const string BasePath = "D:\\Data\\NeosWiki\\";
         private StringBuilder componentErrors = new StringBuilder();
         public readonly Sync<string> ComponentName;
         public readonly Sync<int> CaptureIndex;
@@ -56,13 +57,17 @@ namespace NeosWikiAssetGenerator
         {
             WorkerInspector.BuildInspectorUI(this, ui);
 
-            ui.Button("Generate Component and LogiX visuals", (b, e) => { StartTask(async () => { await GenerateNew(); }); });
+            ui.Button("Generate Component and LogiX visuals", GeneratePressed);
             ui.Button("Generate Wiki InfoBoxes and tables", (b, e) => { GenerateInfoBoxes(); });
             ui.Button("Generate Wiki Index pages", (b, e) => { GenerateWikiIndexPages(); });
             ui.Button("Capture Image", (b, e) => { CaptureImage(); });
             componentProgress = ui.Text("0/0", true, Alignment.MiddleCenter, false);
         }
 
+        private void GeneratePressed(IButton button, ButtonEventData eventData)
+        {
+            StartTask(async () => { await GenerateNew(); });
+        }
         private async Task GenerateNew()
         {
             Processors.Clear();
@@ -81,27 +86,31 @@ namespace NeosWikiAssetGenerator
             ComponentCamera.SelectiveRender.Add();
             NeosTypeProcessor.VisualCaptureCamera = ComponentCamera;
 
-            NeosTypeProcessor.TypeBlacklist = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText("D:\\Data\\NeosWiki\\TypeBlacklist.json"));
+            //Ensure all necessary directories exist prior to starting
+            Directory.CreateDirectory($"{BasePath}Config\\");
+            Directory.CreateDirectory($"{BasePath}Data\\");
+            Directory.CreateDirectory($"{BasePath}Logix\\");
+            Directory.CreateDirectory($"{BasePath}Components\\");
 
-            ComponentProcessor.Overloads = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("D:\\Data\\NeosWiki\\ComponentOverloads.json"));
-            if (ComponentProcessor.Overloads == null)
+            NeosTypeProcessor.TypeBlacklist = JsonConvert.DeserializeObject<List<string>>(File.ReadAllText($"{BasePath}Config\\TypeBlacklist.json"));
+            Dictionary<string, Data.OverloadSetting> typeOverloads = JsonConvert.DeserializeObject<Dictionary<string, Data.OverloadSetting>>(File.ReadAllText($"{BasePath}Config\\TypeOverloads.json"));
+            if (typeOverloads == null)
             {
-                UniLog.Log("Could not load ComponentOverloads");
-                ComponentProcessor.Overloads = new Dictionary<string, string>();
+                UniLog.Log("Could not load TypeOverloads");
+                ComponentProcessor.Overloads = new Dictionary<string, Data.OverloadSetting>();
+                LogixProcessor.Overloads = new Dictionary<string, Data.OverloadSetting>();
             }
-
-            LogixProcessor.Overloads = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("D:\\Data\\NeosWiki\\LogixOverloads.json"));
-            if (LogixProcessor.Overloads == null)
+            else
             {
-                UniLog.Log("Could not load LogixOverloads");
-                LogixProcessor.Overloads = new Dictionary<string, string>();
+                ComponentProcessor.Overloads = typeOverloads;
+                LogixProcessor.Overloads = typeOverloads;
             }
 
             Processors.Add(LogixProcessor);
             Processors.Add(ComponentProcessor);
 
-            List<string> logixErrorTypes = new List<string>();
-            List<string> componentErrorTypes = new List<string>();
+            List<string> typeErrors = new List<string>();
+            List<string> missingGenericTypeAttribute = new List<string>();
             try
             {
                 int totalComponents = frooxEngineComponentTypes.Count();
@@ -129,7 +138,7 @@ namespace NeosWikiAssetGenerator
                         }
                         catch (Exception ex)
                         {
-                            componentErrorTypes.Add(neosType.FullName);
+                            typeErrors.Add(neosType.FullName);
                             UniLog.Log($"Component generation failed for {neosType.FullName}: {ex}");
                         }
                     }
@@ -138,15 +147,22 @@ namespace NeosWikiAssetGenerator
                     await new Updates(2);
                     completedComponents++;
                     componentProgress.Content.Value = $"{completedComponents} / {totalComponents} ({Math.Round(((float)completedComponents / (float)totalComponents) * 100.0f)}%)";
+
+                    if(neosType.IsSubclassOf(typeof(Component)) && !neosType.IsSubclassOf(typeof(LogixNode)) && (neosType.IsGenericType || neosType.IsGenericTypeDefinition))
+                    {
+                        if(neosType.GetCustomAttribute<GenericTypes>() is null)
+                        {
+                            missingGenericTypeAttribute.Add(neosType.FullName);
+                        }
+                    }
                 }
+                File.WriteAllText($"{BasePath}Data\\MissingGenericTypeAttribute.txt", String.Join("\r\n", missingGenericTypeAttribute));
             }
             catch (Exception ex)
             {
                 UniLog.Log("Processor Failed: " + ex);
-                //Log.Error(ex, "Processor failed:");
             }
-            File.WriteAllText("D:\\Data\\NeosWiki\\logixErrorTypes.json", JsonConvert.SerializeObject(logixErrorTypes, Formatting.Indented));
-            File.WriteAllText("D:\\Data\\NeosWiki\\componentErrorTypes.json", JsonConvert.SerializeObject(componentErrorTypes, Formatting.Indented));
+            File.WriteAllText($"{BasePath}Data\\TypeErrors.json", JsonConvert.SerializeObject(typeErrors, Formatting.Indented));
 
             List<string> assemblyNames = new List<string>
             {
@@ -173,7 +189,7 @@ namespace NeosWikiAssetGenerator
                     neosEnumTypes.Add(enumData);
                 }
             }
-            File.WriteAllText("D:\\Data\\NeosWiki\\enumTypes.json", JsonConvert.SerializeObject(neosEnumTypes, Formatting.Indented));
+            File.WriteAllText($"{BasePath}Data\\EnumTypes.json", JsonConvert.SerializeObject(neosEnumTypes, Formatting.Indented));
         }
         private void GenerateInfoBoxes()
         {
@@ -213,7 +229,7 @@ namespace NeosWikiAssetGenerator
                 sb.AppendLine("|-");
             }
             sb.AppendLine("|}");
-            System.IO.File.WriteAllText("D:\\Data\\NeosWiki\\Table_ComponentFields.txt", sb.ToString());
+            System.IO.File.WriteAllText($"{BasePath}Data\\Table_ComponentFields.txt", sb.ToString());
             #endregion
             sb.Clear();
 
@@ -235,7 +251,7 @@ namespace NeosWikiAssetGenerator
                 sb.AppendLine("|-");
             }
             sb.AppendLine("|}");
-            System.IO.File.WriteAllText("D:\\Data\\NeosWiki\\Table_ComponentTriggers.txt", sb.ToString());
+            System.IO.File.WriteAllText($"{BasePath}Data\\Table_ComponentTriggers.txt", sb.ToString());
             #endregion
             sb.Clear();
             #region Logix InfoBox
@@ -267,9 +283,13 @@ namespace NeosWikiAssetGenerator
                 sb.AppendLine("|-");
             }
             sb.AppendLine("|}");
-            System.IO.File.WriteAllText("D:\\Data\\NeosWiki\\Infobox_Logix_Node.txt", sb.ToString());
+            System.IO.File.WriteAllText($"{BasePath}Data\\Infobox_Logix_Node.txt", sb.ToString());
             #endregion
         }
+
+        /*
+         * Remove JP Searcher code, since it isn't needed.
+         */
         private void GenerateWikiIndexPages()
         {
             IEnumerable<Type> frooxEngineTypes = AppDomain.CurrentDomain.GetAssemblies().Where(T => T.GetName().Name == "FrooxEngine").SelectMany(T => T.GetTypes());
@@ -330,7 +350,7 @@ namespace NeosWikiAssetGenerator
                 foreach (ComponentPathNode child in currentNode.Children)
                     nodeStack.Push(child);
             }
-            File.WriteAllText("D:\\Data\\NeosWiki\\Components.json",
+            File.WriteAllText($"{BasePath}Data\\Components.json",
                 JsonConvert.SerializeObject(componentRoot,
                 Formatting.Indented,
                 new JsonSerializerSettings()
@@ -349,14 +369,14 @@ namespace NeosWikiAssetGenerator
                 foreach (ComponentPathNode child in currentNode.Children)
                     nodeStack.Push(child);
             }
-            File.WriteAllText("D:\\Data\\NeosWiki\\Logix.json",
+            File.WriteAllText($"{BasePath}Data\\Logix.json",
                 JsonConvert.SerializeObject(logixRoot,
                 Formatting.Indented,
                 new JsonSerializerSettings()
                 {
                     NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
                 }));
-            File.WriteAllText("D:\\Data\\NeosWiki\\JPSearcherIndex.txt", JPSearcherStringBuilder.ToString());
+            File.WriteAllText($"{BasePath}Data\\JPSearcherIndex.txt", JPSearcherStringBuilder.ToString());
 
         }
 
@@ -371,7 +391,7 @@ namespace NeosWikiAssetGenerator
                 componentVisual.LocalPosition = new float3(0, ((((lastContent.RectTransform.BoundingRect.height / 2.0f) - lastContent.RectTransform.BoundingRect.Center.y) / 2.0f) + 5.0f) * 0.001f, 0.5f);
                 componentCamera.OrthographicSize.Value = (lastContent.RectTransform.BoundingRect.height + 5) / 2000.0f;
                 Bitmap2D logixTex = await componentCamera.RenderToBitmap(new int2(512, (int)(512.0f * aspectRatio)));
-                logixTex.Save($"D:\\Data\\NeosWiki\\CustomCapture{CaptureIndex}.png", 100, true);
+                logixTex.Save($"{BasePath}Data\\CustomCapture{CaptureIndex}.png", 100, true);
             }
         }
         

@@ -18,7 +18,6 @@ namespace NeosWikiAssetGenerator.Type_Processors
         static readonly MethodInfo LogixGenerateUIMethod = typeof(LogixNode).GetMethod("GenerateUI", BindingFlags.Instance | BindingFlags.NonPublic);
 
         public List<string> OverloadCache = new List<string>();
-        public Dictionary<string, string> Overloads { get; set; } = new Dictionary<string, string>();
         public override bool ValidateProcessor(Type neosType)
         {
             NodeOverload typeOverload = neosType.GetCustomAttribute<NodeOverload>();
@@ -37,14 +36,15 @@ namespace NeosWikiAssetGenerator.Type_Processors
 
         public override object CreateInstance(Type neosType)
         {
-            string targetInstanceType = GetOverload(neosType);
-            if (targetInstanceType is null)
+            Data.OverloadSetting typeOverloadSetting = GetOverload(neosType);
+            if (typeOverloadSetting is null || typeOverloadSetting.OverloadType is null)
             {
-               UniLog.Log($"Missing LogiX overload for {neosType.FullName}");
+                UniLog.Log($"Missing LogiX overload for {neosType.FullName}");
                 return null;
             }
-            return InstanceSlot.AttachComponent(targetInstanceType);
+            return InstanceSlot.AttachComponent(typeOverloadSetting.OverloadType);
         }
+
         public async override Task GenerateVisual(object typeInstance, Type neosType, bool force = false)
         {
             LogixNode targetInstance = typeInstance as LogixNode;
@@ -63,8 +63,8 @@ namespace NeosWikiAssetGenerator.Type_Processors
 
             foreach (string path in typeCategory.Paths)
             {
-                Directory.CreateDirectory($"{BasePath}\\Logix\\{path}\\");
-                logixImage.Save($"{BasePath}\\Logix\\{path}\\{typeSafeName}Node.png", 100, true);
+                Directory.CreateDirectory($"{WikiAssetGenerator.BasePath}\\Logix\\{path}\\");
+                logixImage.Save($"{WikiAssetGenerator.BasePath}\\Logix\\{path}\\{typeSafeName}Node.png", 100, true);
             }
         }
 
@@ -175,7 +175,7 @@ namespace NeosWikiAssetGenerator.Type_Processors
 
             foreach (string path in typeCategory.Paths)
             {
-                using (StreamWriter fileWriter = new StreamWriter($"{BasePath}\\Logix\\{path}\\{typeSafeName}.txt"))
+                using (StreamWriter fileWriter = new StreamWriter($"{WikiAssetGenerator.BasePath}\\Logix\\{path}\\{typeSafeName}.txt"))
                 {
                     await fileWriter.WriteAsync(infoboxBuilder.ToString());
                 }
@@ -188,12 +188,12 @@ namespace NeosWikiAssetGenerator.Type_Processors
 
         public override bool NeedsVisual(string typeSafeName, Category typeCategory)
         {
-            return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Logix\\{path}\\{typeSafeName}Node.png"));
+            return !typeCategory.Paths.All((path) => File.Exists($"{WikiAssetGenerator.BasePath}\\Logix\\{path}\\{typeSafeName}Node.png"));
         }
 
         public override bool NeedsData(string typeSafeName, Category typeCategory)
         {
-            return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Logix\\{path}\\{typeSafeName}.txt"));
+            return !typeCategory.Paths.All((path) => File.Exists($"{WikiAssetGenerator.BasePath}\\Logix\\{path}\\{typeSafeName}.txt"));
         }
         private async Task BuildLogiXUI(LogixNode targetInstance)
         {
@@ -201,23 +201,23 @@ namespace NeosWikiAssetGenerator.Type_Processors
             VisualSlot.LocalScale = new float3(100, 100, 100);
             await new Updates(10);
         }
-        private string GetOverload(Type neosType)
+        private Data.OverloadSetting GetOverload(Type neosType)
         {
             NodeOverload typeOverload = neosType.GetCustomAttribute<NodeOverload>();
-            if (Overloads.TryGetValue(neosType.FullName, out string overloadTypeString))
-                return overloadTypeString;
+            if (Overloads.TryGetValue(neosType.FullName, out Data.OverloadSetting overloadSetting))
+                return overloadSetting;
             if (typeOverload != null)
             {
-                if (Overloads.TryGetValue(typeOverload.FunctionName, out overloadTypeString))
-                    return overloadTypeString;
+                if (Overloads.TryGetValue(typeOverload.FunctionName, out overloadSetting))
+                    return overloadSetting;
                 Type foundTypeOverload = LogixHelper.GetMatchingOverload(typeOverload.FunctionName, null, new Func<Type, int>(GetTypeRank));
                 if (foundTypeOverload != null)
                 {
                     OverloadCache.Add(typeOverload.FunctionName);
-                    return foundTypeOverload?.FullName;
+                    return new Data.OverloadSetting { OverloadType = foundTypeOverload?.FullName };
                 }
             }
-            return neosType.FullName;
+            return new Data.OverloadSetting { OverloadType = neosType.FullName };
         }
         private static int GetTypeRank(Type neosType)
         {

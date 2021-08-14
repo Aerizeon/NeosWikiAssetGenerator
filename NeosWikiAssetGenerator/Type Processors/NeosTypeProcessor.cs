@@ -4,16 +4,20 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Neo.IronLua;
 
 namespace NeosWikiAssetGenerator.Type_Processors
 {
     public class NeosTypeProcessor : INeosTypeProcessor
     {
-        public static string BasePath = "D:\\Data\\NeosWiki\\NewGenerator\\";
         public static List<string> TypeBlacklist = new List<string>();
         public static Camera VisualCaptureCamera;
         public static Slot VisualSlot;
         public static Slot InstanceSlot;
+        public static Lua LuaInstance = new Lua(LuaIntegerType.Int32, LuaFloatType.Float);
+        public static dynamic LuaEnvironment = LuaInstance.CreateEnvironment();
+
+        public Dictionary<string, Data.OverloadSetting> Overloads { get; set; } = new Dictionary<string, Data.OverloadSetting>();
 
         public virtual bool ValidateProcessor(Type neosType)
         {

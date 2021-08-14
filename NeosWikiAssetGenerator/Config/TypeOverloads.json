@@ -1,0 +1,458 @@
+{
+  "FrooxEngine.AssetProxy`1": {
+    "OverloadType": "FrooxEngine.AssetProxy`1[FrooxEngine.ITexture2D]",
+    "Initializer": null
+  },
+  "FrooxEngine.AssetLoader`1": {
+    "OverloadType": "FrooxEngine.AssetLoader`1[FrooxEngine.IAsset]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceOptionDescriptionDriver`1": {
+    "OverloadType": "FrooxEngine.ReferenceOptionDescriptionDriver`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicReference`1": {
+    "OverloadType": "FrooxEngine.DynamicReference`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicReferenceVariable`1": {
+    "OverloadType": "FrooxEngine.DynamicReferenceVariable`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicReferenceVariableDriver`1": {
+    "OverloadType": "FrooxEngine.DynamicReferenceVariableDriver`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicReferenceVariableReset`1": {
+    "OverloadType": "FrooxEngine.DynamicReferenceVariableReset`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicValueVariable`1": {
+    "OverloadType": "FrooxEngine.DynamicValueVariable`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicValueVariableDriver`1": {
+    "OverloadType": "FrooxEngine.DynamicValueVariableDriver`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicValueVariableReset`1": {
+    "OverloadType": "FrooxEngine.DynamicValueVariableReset`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicVariableStatus`1": {
+    "OverloadType": "FrooxEngine.DynamicVariableStatus`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.DataPresetReference`1": {
+    "OverloadType": "FrooxEngine.DataPresetReference`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.DelegateProxy`1": {
+    "OverloadType": "FrooxEngine.DelegateProxy`1[System.Action]",
+    "Initializer": null
+  },
+  "FrooxEngine.DelegateProxySource`1": {
+    "OverloadType": "FrooxEngine.DelegateProxySource`1[System.Action]",
+    "Initializer": null
+  },
+  "FrooxEngine.ValueField`1": {
+    "OverloadType": "FrooxEngine.ValueField`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.ValueFieldProxy`1": {
+    "OverloadType": "FrooxEngine.ValueFieldProxy`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.MultiTextureFader`1": {
+    "OverloadType": "FrooxEngine.MultiTextureFader`1[FrooxEngine.Texture2D]",
+    "Initializer": null
+  },
+  "FrooxEngine.DelegateTag`1": {
+    "OverloadType": "FrooxEngine.DelegateTag`1[System.Action]",
+    "Initializer": null
+  },
+  "FrooxEngine.ValueTag`1": {
+    "OverloadType": "FrooxEngine.ValueTag`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.CallbackValueArgument`1": {
+    "OverloadType": "FrooxEngine.CallbackValueArgument`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.GenericModalDialogSpawner`1": {
+    "OverloadType": "FrooxEngine.GenericModalDialogSpawner`1[NeosWikiAssetGenerator.WikiAssetGenerator]",
+    "Initializer": null
+  },
+  "FrooxEngine.GenericUserspaceDialogSpawner`1": {
+    "OverloadType": "FrooxEngine.GenericUserspaceDialogSpawner`1[NeosWikiAssetGenerator.WikiAssetGenerator]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Input.ControllerNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Input.ControllerNode`1[FrooxEngine.IndexController]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Input.EnumInput`1": {
+    "OverloadType": "FrooxEngine.LogiX.Input.EnumInput`1[NeosWikiAssetGenerator.WikiAssetGenerator+Enum]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Input.TextFieldNodeBase`1": {
+    "OverloadType": "FrooxEngine.LogiX.Input.TextFieldNodeBase`1[System.String]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.EnumToInt`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.EnumToInt`1[NeosWikiAssetGenerator.WikiAssetGenerator+Enum]",
+    "Initializer": null
+  },
+  "FrooxEngine.UIX.ButtonDelegateRelay`1": {
+    "OverloadType": "FrooxEngine.UIX.ButtonDelegateRelay`1[System.Action]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceField`1": {
+    "OverloadType": "FrooxEngine.ReferenceField`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceMultiDriver`1": {
+    "OverloadType": "FrooxEngine.ReferenceMultiDriver`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceEqualityDriver`1": {
+    "OverloadType": "FrooxEngine.ReferenceEqualityDriver`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.ButtonEnumShift`1": {
+    "OverloadType": "FrooxEngine.ButtonEnumShift`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.ButtonReferenceCycle`1": {
+    "OverloadType": "FrooxEngine.ButtonReferenceCycle`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.ButtonReferenceSet`1": {
+    "OverloadType": "FrooxEngine.ButtonReferenceSet`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceCopy`1": {
+    "OverloadType": "FrooxEngine.ReferenceCopy`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceUserOverride`1": {
+    "OverloadType": "FrooxEngine.ReferenceUserOverride`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.AssetMultiplexer`1": {
+    "OverloadType": "FrooxEngine.AssetMultiplexer`1[FrooxEngine.ITexture2D]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceMultiplexer`1": {
+    "OverloadType": "FrooxEngine.ReferenceMultiplexer`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.NeosEnumEditor`1": {
+    "OverloadType": "FrooxEngine.NeosEnumEditor`1[NeosWikiAssetGenerator.WikiAssetGenerator+Enum]",
+    "Initializer": null
+  },
+  "FrooxEngine.AssetFrameSlot`1": {
+    "OverloadType": "FrooxEngine.AssetFrameSlot`1[FrooxEngine.ITexture2D]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.DynamicVariableInput`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.DynamicVariableInput`1[System.String]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.DynamicVariableInputWithEvents`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.DynamicVariableInputWithEvents`1[System.String]",
+    "Initializer": null
+  },
+  "FrooxEngine.UIX.Slider`1": {
+    "OverloadType": "FrooxEngine.UIX.Slider`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.ButtonValueShift`1": {
+    "OverloadType": "FrooxEngine.ButtonValueShift`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Actions.WriteReferenceNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Actions.WriteReferenceNode`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.ReferenceRegister`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.ReferenceRegister`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.References.ReferenceTarget`1": {
+    "OverloadType": "FrooxEngine.LogiX.References.ReferenceTarget`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.StandaloneRectMesh`1": {
+    "OverloadType": "FrooxEngine.StandaloneRectMesh`1[FrooxEngine.AudioSourceWaveformMesh]",
+    "Initializer": null
+  },
+  "FrooxEngine.AudioStreamMetadata`1": {
+    "OverloadType": "FrooxEngine.AudioStreamMetadata`1[CodeX.StereoSample]",
+    "Initializer": null
+  },
+  "FrooxEngine.BooleanReferenceDriver`1": {
+    "OverloadType": "FrooxEngine.BooleanReferenceDriver`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceTag`1": {
+    "OverloadType": "FrooxEngine.ReferenceTag`1[FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.UIX.ReferenceRadio`1": {
+    "OverloadType": "FrooxEngine.UIX.ReferenceRadio`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.DataPresetValue`1": {
+    "OverloadType": "FrooxEngine.DataPresetValue`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.DynamicField`1": {
+    "OverloadType": "FrooxEngine.DynamicField`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.CloudValueVariable`1": {
+    "OverloadType": "FrooxEngine.CloudValueVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.CloudValueVariableDriver`1": {
+    "OverloadType": "FrooxEngine.CloudValueVariableDriver`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.ActiveUserCloudField`1": {
+    "OverloadType": "FrooxEngine.ActiveUserCloudField`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.ActiveUserCloudValueVariable`1": {
+    "OverloadType": "FrooxEngine.ActiveUserCloudValueVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.CloudValueField`1": {
+    "OverloadType": "FrooxEngine.CloudValueField`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.ReferenceCast`2": {
+    "OverloadType": "FrooxEngine.ReferenceCast`2[FrooxEngine.Slot, FrooxEngine.IWorldElement]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.PackNullable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.PackNullable`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.UnpackNullable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.UnpackNullable`1[System.Int32]",
+    "Initializer": null
+  },
+  "FrooxEngine.ValueGradientDriver`1": {
+    "OverloadType": "FrooxEngine.ValueGradientDriver`1[System.Single]",
+    "Initializer": "Instance:AddPoint(0.0, 0.5);"
+  },
+  "AND": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.AND_Bool",
+    "Initializer": null
+  },
+  "AND_Multi": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.AND_Multi_Bool",
+    "Initializer": null
+  },
+  "NAND": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.NAND_Bool",
+    "Initializer": null
+  },
+  "NAND_Multi": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.NAND_Multi_Bool",
+    "Initializer": null
+  },
+  "OR": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.OR_Bool",
+    "Initializer": null
+  },
+  "OR_Multi": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.OR_Multi_Bool",
+    "Initializer": null
+  },
+  "NOR": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.NOR_Bool",
+    "Initializer": null
+  },
+  "NOR_Multi": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.NOR_Multi_Bool",
+    "Initializer": null
+  },
+  "XOR": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.XOR_Bool",
+    "Initializer": null
+  },
+  "XOR_Multi": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.XOR_Multi_Bool",
+    "Initializer": null
+  },
+  "XNOR": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.XNOR_Bool",
+    "Initializer": null
+  },
+  "XNOR_Multi": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.XNOR_Multi_Bool",
+    "Initializer": null
+  },
+  "NOT": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.NOT_Bool",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.DelayValueNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.DelayValueNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.WriteLatch`1": {
+    "OverloadType": "FrooxEngine.LogiX.WriteLatch`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.CacheNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.CacheNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.DriverNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.DriverNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ReferenceNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.ReferenceNode`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.RelayNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.RelayNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.UpdatingRelayNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.UpdatingRelayNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Input.ValueNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Input.ValueNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Utility.IndexOfFirstMatch`1": {
+    "OverloadType": "FrooxEngine.LogiX.Utility.IndexOfFirstMatch`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ProgramFlow.UpdatesDelayWithValueNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.ProgramFlow.UpdatesDelayWithValueNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ProgramFlow.DynamicImpulseReceiverWithValue`1": {
+    "OverloadType": "FrooxEngine.LogiX.ProgramFlow.DynamicImpulseReceiverWithValue`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ProgramFlow.DynamicImpulseTriggerWithValue`1": {
+    "OverloadType": "FrooxEngine.LogiX.ProgramFlow.DynamicImpulseTriggerWithValue`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ProgramFlow.LocalFireOnChange`1": {
+    "OverloadType": "FrooxEngine.LogiX.ProgramFlow.LocalFireOnChange`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ProgramFlow.FireOnChange`1": {
+    "OverloadType": "FrooxEngine.LogiX.ProgramFlow.FireOnChange`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ProgramFlow.FireOnChangeRef`1": {
+    "OverloadType": "FrooxEngine.LogiX.ProgramFlow.FireOnChangeRef`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.ProgramFlow.DelayWithValueNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.ProgramFlow.DelayWithValueNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.Demultiplexer`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.Demultiplexer`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.IntToEnum`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.IntToEnum`1[FrooxEngine.CameraClearMode]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.PickRandom`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.PickRandom`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.IsNullNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.IsNullNode`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.NotNullNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.NotNullNode`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.Multiplexer`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.Multiplexer`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.NullCoalesce`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.NullCoalesce`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Operators.MultiNullCoalesce`1": {
+    "OverloadType": "FrooxEngine.LogiX.Operators.MultiNullCoalesce`1[FrooxEngine.Slot]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.ReadDynamicVariable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.ReadDynamicVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.WriteDynamicVariable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.WriteDynamicVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.CreateDynamicVariable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.CreateDynamicVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.WriteOrCreateDynamicVariable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.WriteOrCreateDynamicVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.DeleteDynamicVariable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.DeleteDynamicVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.ClearDynamicVariablesOfType`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.ClearDynamicVariablesOfType`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Assets.AttachAsset`1": {
+    "OverloadType": "FrooxEngine.LogiX.Assets.AttachAsset`1[BaseX.dummy]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Animation.Tweening.TweenValueNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Animation.Tweening.TweenValueNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Actions.DriveValueNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Actions.DriveValueNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Actions.WriteValueNode`1": {
+    "OverloadType": "FrooxEngine.LogiX.Actions.WriteValueNode`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.ReadCloudVariable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.ReadCloudVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.WriteCloudVariable`1": {
+    "OverloadType": "FrooxEngine.LogiX.Data.WriteCloudVariable`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.CommonToolPermissions": {
+	  "OverloadType":"FrooxEngine.CommonToolPermissions",
+	  "Initializer": "Instance:AddRule(FindType(\"FrooxEngine.DevToolTip\"), true, true);"
+  },
+  "FrooxEngine.ValueTextFormatDriver`1": {
+	"OverloadType": "FrooxEngine.ValueTextFormatDriver`1[System.Single]",
+    "Initializer": null
+  },
+  "FrooxEngine.LogiX.Data.ValueRegister`1": {
+	"OverloadType": "FrooxEngine.LogiX.Data.ValueRegister`1[System.Single]",
+    "Initializer": null
+  }
+}

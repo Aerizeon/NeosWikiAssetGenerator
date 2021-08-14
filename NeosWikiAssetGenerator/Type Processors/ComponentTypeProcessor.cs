@@ -10,13 +10,12 @@ using BaseX;
 using CodeX;
 using System.Threading.Tasks;
 using System.Reflection;
+using Neo.IronLua;
 
 namespace NeosWikiAssetGenerator.Type_Processors
 {
     public class ComponentTypeProcessor : NeosTypeProcessor
     {
-        public Dictionary<string, string> Overloads { get; set; } = new Dictionary<string, string>();
-
         public override bool ValidateProcessor(Type neosType)
         {
             return neosType.IsSubclassOf(typeof(Component)) && !neosType.IsSubclassOf(typeof(LogixNode)) && !TypeBlacklist.Contains(neosType.FullName);
@@ -24,14 +23,37 @@ namespace NeosWikiAssetGenerator.Type_Processors
 
         public override object CreateInstance(Type neosType)
         {
-
-            string targetInstanceType = GetOverload(neosType);
-            if (targetInstanceType is null)
+            Data.OverloadSetting typeOverloadSetting = GetOverload(neosType);
+            if (typeOverloadSetting is null)
             {
                 UniLog.Log($"Missing Component overload for {neosType.FullName}");
                 return null;
             }
-           return InstanceSlot.AttachComponent(targetInstanceType);
+            Component instance = InstanceSlot.AttachComponent(typeOverloadSetting.OverloadType ?? neosType.FullName);
+            if (typeOverloadSetting.Initializer != null)
+            {
+                try
+                {
+                    //Create a new environment each time
+                    LuaTable environment = LuaInstance.CreateEnvironment();
+                    environment.DefineFunction("FindType", new Func<string, Type>(luaFindType));
+                    //Set "Instance" to point to the component we want to modify
+                    environment.SetMemberValue("Instance", instance);
+                    //Compile and run the initializer script
+                    LuaInstance.CompileChunk(typeOverloadSetting.Initializer, "Init.lua", new LuaCompileOptions() { ClrEnabled = false }).Run(environment);
+                }
+                catch (Exception ex)
+                {
+                    UniLog.Log($"Unable to run initializer on {typeOverloadSetting.OverloadType}: {ex}");
+                    return null;
+                }
+            }
+            return instance;
+        }
+
+        private Type luaFindType(string typeName)
+        {
+            return TypeHelper.FindType(typeName);
         }
 
         public async override Task GenerateVisual(object typeInstance, Type neosType, bool force = false)
@@ -53,8 +75,8 @@ namespace NeosWikiAssetGenerator.Type_Processors
 
             foreach (string path in typeCategory.Paths)
             {
-                Directory.CreateDirectory($"{BasePath}\\Components\\{path}\\");
-                componentImage.Save($"{BasePath}\\Components\\{path}\\{typeSafeName}Component.png", 100, true);
+                Directory.CreateDirectory($"{WikiAssetGenerator.BasePath}\\Components\\{path}\\");
+                componentImage.Save($"{WikiAssetGenerator.BasePath}\\Components\\{path}\\{typeSafeName}Component.png", 100, true);
             }
             VisualSlot.DestroyChildren();
         }
@@ -108,7 +130,7 @@ namespace NeosWikiAssetGenerator.Type_Processors
             }
             foreach (string path in typeCategory.Paths)
             {
-                using (StreamWriter fileWriter = new StreamWriter($"{BasePath}\\Components\\{path}\\{typeSafeName}.txt"))
+                using (StreamWriter fileWriter = new StreamWriter($"{WikiAssetGenerator.BasePath}\\Components\\{path}\\{typeSafeName}.txt"))
                 {
                     await fileWriter.WriteAsync(infoboxBuilder.ToString());
                 }
@@ -121,12 +143,12 @@ namespace NeosWikiAssetGenerator.Type_Processors
 
         public override bool NeedsVisual(string typeSafeName, Category typeCategory)
         {
-            return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Components\\{path}\\{typeSafeName}Component.png"));
+            return !typeCategory.Paths.All((path) => File.Exists($"{WikiAssetGenerator.BasePath}\\Components\\{path}\\{typeSafeName}Component.png"));
         }
 
         public override bool NeedsData(string typeSafeName, Category typeCategory)
         {
-            return !typeCategory.Paths.All((path) => File.Exists($"{BasePath}\\Components\\{path}\\{typeSafeName}.txt"));
+            return !typeCategory.Paths.All((path) => File.Exists($"{WikiAssetGenerator.BasePath}\\Components\\{path}\\{typeSafeName}.txt"));
         }
 
         private async Task<Rect> BuildComponentUI(Component targetInstance)
@@ -208,17 +230,14 @@ namespace NeosWikiAssetGenerator.Type_Processors
                 UniLog.Log(ex.Message);
             }
         }
-        private string GetOverload(Type neosType)
+        private Data.OverloadSetting GetOverload(Type neosType)
         {
-            if (neosType.IsGenericType || neosType.IsGenericTypeDefinition)
-            {
-                if (Overloads.TryGetValue(neosType.FullName, out string overloadTypeString))
-                    return overloadTypeString;
-                else
-                    return null;
-            }
+            if (Overloads.TryGetValue(neosType.FullName, out Data.OverloadSetting overloadSetting))
+                return overloadSetting;
+            else if (neosType.IsGenericType || neosType.IsGenericTypeDefinition)
+                return null;
             else
-                return neosType.FullName;
+                return new Data.OverloadSetting { OverloadType = neosType.FullName };
         }
         private Type GetNeosWriteNodeOverload(Type inputType)
         {
