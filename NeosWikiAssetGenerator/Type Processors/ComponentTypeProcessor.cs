@@ -106,7 +106,7 @@ namespace NeosWikiAssetGenerator.Type_Processors
             infoboxBuilder.AppendLine("== Fields ==");
             infoboxBuilder.AppendLine("{{Table ComponentFields");
 
-            BuildComponentSyncMembers(infoboxBuilder, targetInstance, 3);
+            BuildWorkerSyncMembers(infoboxBuilder, targetInstance, 3);
 
             infoboxBuilder.AppendLine("}}");
             infoboxBuilder.AppendLine();
@@ -160,7 +160,7 @@ namespace NeosWikiAssetGenerator.Type_Processors
             ui.VerticalLayout(4f, 0, Alignment.TopLeft);
             ui.Style.MinHeight = 30f;
             ui.Style.PreferredHeight = 30f;
-            ui.Style.ForceExpandHeight = false;
+            ui.Style.ForceExpandHeight = true;
             VerticalLayout content = ui.VerticalLayout(4f, 10f, Alignment.TopLeft);
             ui.Style.ChildAlignment = Alignment.TopLeft;
             {
@@ -184,73 +184,6 @@ namespace NeosWikiAssetGenerator.Type_Processors
                 WorkerInspector.BuildInspectorUI(targetInstance, ui);
             await new Updates(5);
             return content.RectTransform.BoundingRect;
-        }
-        private void BuildComponentSyncMembers(StringBuilder infoboxBuilder, Worker target, int indexOffset = 0)
-        {
-            try
-            {
-                for (int index = indexOffset; index < target.SyncMemberCount; ++index)
-                {
-                    if (target.GetSyncMemberFieldInfo(index).GetCustomAttribute<HideInInspectorAttribute>() == null)
-                    {
-                        Type memberType = target.GetSyncMemberFieldInfo(index).FieldType;
-                        if (memberType.IsGenericType && memberType.GenericTypeArguments.Length > 0)
-                        {
-                            Type t = GetNeosWriteNodeOverload(memberType);
-                            if (t != null)
-                            {
-                                if (t.IsGenericType)
-                                    infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{t.Name.UppercaseFirst()}|TypeString{index - indexOffset}={t.GetNiceName().UppercaseFirst()}|");
-                                else
-                                    infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{t.GetNiceName().UppercaseFirst()}|");
-                            }
-                            else
-                            {
-                                UniLog.Log($"Missing WriteNode overload for {memberType.GetNiceName()}");
-                                infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{memberType.Name.UppercaseFirst()}|TypeString{index - indexOffset}={memberType.GetNiceName().UppercaseFirst()}|");
-                            }
-
-                        }
-                        else
-                        {
-                            if (target.GetSyncMember(index) is SyncObject syncField)
-                            {
-                                BuildComponentSyncMembers(infoboxBuilder, syncField);
-                            }
-                            else
-                            {
-                                infoboxBuilder.AppendLine($"|{target.GetSyncMemberName(index)}|{memberType.GetNiceName().UppercaseFirst()}| ");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UniLog.Log(ex.Message);
-            }
-        }
-        private Data.OverloadSetting GetOverload(Type neosType)
-        {
-            if (Overloads.TryGetValue(neosType.FullName, out Data.OverloadSetting overloadSetting))
-                return overloadSetting;
-            else if (neosType.IsGenericType || neosType.IsGenericTypeDefinition)
-                return null;
-            else
-                return new Data.OverloadSetting { OverloadType = neosType.FullName };
-        }
-        private Type GetNeosWriteNodeOverload(Type inputType)
-        {
-            Type returnType = null;
-            Type inputSubType = null;
-            inputSubType = inputType.FindGenericBaseClass(typeof(SyncRef<>));
-            if (inputSubType == null)
-                inputSubType = inputType.EnumerateInterfacesRecursively().FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IValue<>));
-
-            if (inputSubType != null)
-                returnType = inputSubType.GetGenericArguments()[0];
-
-            return returnType;
         }
     }
 }

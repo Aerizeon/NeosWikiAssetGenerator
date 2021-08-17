@@ -73,8 +73,9 @@ namespace NeosWikiAssetGenerator
             Processors.Clear();
             ComponentTypeProcessor ComponentProcessor = new ComponentTypeProcessor();
             LogixTypeProcessor LogixProcessor = new LogixTypeProcessor();
+            SyncMemberTypeProcessor SyncMemberProcessor = new SyncMemberTypeProcessor();
             IEnumerable<Type> frooxEngineTypes = AppDomain.CurrentDomain.GetAssemblies().Where(T => T.GetName().Name == "FrooxEngine").SelectMany(T => T.GetTypes());
-            IEnumerable<Type> frooxEngineComponentTypes = frooxEngineTypes.Where(T => T.Namespace != null && T.Namespace.StartsWith("FrooxEngine")).Where(T => T.IsSubclassOf(typeof(Component)) || T.IsSubclassOf(typeof(LogixNode)));
+            IEnumerable<Type> frooxEngineComponentTypes = frooxEngineTypes.Where(T => T.Namespace != null && T.Namespace.StartsWith("FrooxEngine")).Where(T => T.IsSubclassOf(typeof(Component)) || T.IsSubclassOf(typeof(LogixNode)) || T.IsSubclassOf(typeof(SyncObject)));
 
             Camera ComponentCamera = Slot.GetComponentOrAttach<Camera>();
             ComponentCamera.Projection.Value = CameraProjection.Orthographic;
@@ -99,15 +100,18 @@ namespace NeosWikiAssetGenerator
                 UniLog.Log("Could not load TypeOverloads");
                 ComponentProcessor.Overloads = new Dictionary<string, Data.OverloadSetting>();
                 LogixProcessor.Overloads = new Dictionary<string, Data.OverloadSetting>();
+                SyncMemberProcessor.Overloads = new Dictionary<string, Data.OverloadSetting>();
             }
             else
             {
                 ComponentProcessor.Overloads = typeOverloads;
                 LogixProcessor.Overloads = typeOverloads;
+                SyncMemberProcessor.Overloads = typeOverloads;
             }
 
             Processors.Add(LogixProcessor);
             Processors.Add(ComponentProcessor);
+            Processors.Add(SyncMemberProcessor);
 
             List<string> typeErrors = new List<string>();
             List<string> missingGenericTypeAttribute = new List<string>();
