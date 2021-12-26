@@ -201,7 +201,7 @@ namespace NeosWikiAssetGenerator.Type_Processors
             VisualSlot.LocalScale = new float3(100, 100, 100);
             await new Updates(10);
         }
-        private Data.OverloadSetting GetOverload(Type neosType)
+        protected override Data.OverloadSetting GetOverload(Type neosType)
         {
             NodeOverload typeOverload = neosType.GetCustomAttribute<NodeOverload>();
             if (Overloads.TryGetValue(neosType.FullName, out Data.OverloadSetting overloadSetting))

@@ -108,7 +108,7 @@ namespace NeosWikiAssetGenerator.Type_Processors
                 UniLog.Log(ex.Message);
             }
         }
-        protected Data.OverloadSetting GetOverload(Type neosType)
+        protected virtual Data.OverloadSetting GetOverload(Type neosType)
         {
             if (Overloads.TryGetValue(neosType.FullName, out Data.OverloadSetting overloadSetting))
                 return overloadSetting;

@@ -41,7 +41,7 @@ namespace NeosWikiAssetGenerator
         public readonly Sync<string> ComponentName;
         public readonly Sync<int> CaptureIndex;
 
-        List<NeosTypeProcessor> Processors = new List<NeosTypeProcessor>();
+        List<INeosTypeProcessor> Processors = new List<INeosTypeProcessor>();
         VerticalLayout lastContent = null;
         Text componentProgress = null;
         protected override void OnAttach()
